@@ -33,4 +33,4 @@ RUN apt-get --yes -qq update \
  && rm -rf /var/lib/apt/lists/*
 
 
-CMD [ "/bin/sh" ]
+ENTRYPOINT [ "/bin/bash" ]
