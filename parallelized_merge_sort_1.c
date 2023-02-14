@@ -8,6 +8,7 @@ void randomly_initialize_array(int array[], size_t  size);
 void merge(int array[], int left, int middle, int right);
 void merge_sort(int array[], int left, int right);
 
+#define TASK_SIZE 100
 
 int main() {
     srand(time(0));
@@ -21,7 +22,11 @@ int main() {
     }
     struct timeval stop, start;
     gettimeofday(&start, NULL);
-    merge_sort(array_to_be_sorted, 0, array_size-1);
+    #pragma omp parallel num_threads(4)
+    {
+        #pragma omp single
+        merge_sort(array_to_be_sorted, 0, array_size-1);
+    }
     gettimeofday(&stop, NULL);
     printf("\n Array after sorting: \n");
     for(i=0; i<array_size; i++) {
@@ -78,16 +83,11 @@ void merge(int array[], int left, int middle, int right) {
 void merge_sort(int array[], int left, int right) {
     if (left < right) {
         int middle = left + (right - left) / 2;
-        #pragma omp parallel sections
-        {
-            #pragma omp section
-           {
-            merge_sort(array, left, middle);
-           }
-           #pragma omp section {
-            merge_sort(array, middle+1, right);
-           }
-        }
+        #pragma omp task shared(array) if (middle-left > TASK_SIZE)
+        merge_sort(array, left, middle);
+        #pragma omp task shared(array) if (right- middle > TASK_SIZE)
+        merge_sort(array, middle+1, right);
+        #pragma omp taskwait
         merge(array, left, middle, right);
     }
 }
